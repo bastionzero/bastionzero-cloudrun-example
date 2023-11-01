@@ -8,3 +8,5 @@ terraform.tfstate*
 secrets
 .envrc
 terraform.tfvars
+*.md
+.DS_Store
