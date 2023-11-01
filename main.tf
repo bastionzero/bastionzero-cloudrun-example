@@ -138,7 +138,7 @@ resource "google_cloud_run_v2_service" "bzero_cloudrun" {
   }
 }
 
-# Create a TargetConnect policy that permits the BastionZero SA user permission
+# Create a target connect policy that permits the BastionZero SA user permission
 # to SSH
 data "bastionzero_service_accounts" "sa" {}
 data "bastionzero_environments" "e" {}
