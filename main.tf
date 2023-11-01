@@ -33,12 +33,14 @@ variable "provider_creds_file_secret_name" {
   type        = string
   description = "Name of GCP secret that contains the service account provider credentials (provider-file.json)."
   nullable    = false
+  default     = "cloudrun-example-sa-provider-cred"
 }
 
 variable "bzero_creds_file_secret_name" {
   type        = string
   description = "Name of GCP secret that contains the service account Bzero credentials (bzeroCreds.json)."
   nullable    = false
+  default     = "cloudrun-example-sa-bzero-cred"
 }
 
 variable "bastionzero_service_account_email" {
