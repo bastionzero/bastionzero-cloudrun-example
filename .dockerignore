@@ -1,0 +1,12 @@
+Dockerfile
+.dockerignore
+node_modules
+*.tf
+.terraform
+.terraform.lock.hcl
+.git
+.gitignore
+terraform.tfstate*
+secrets
+.envrc
+terraform.tfvars

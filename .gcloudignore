@@ -1,0 +1,10 @@
+.git
+.gitignore
+node_modules
+*.tf
+.terraform
+.terraform.lock.hcl
+terraform.tfstate*
+secrets
+.envrc
+terraform.tfvars
