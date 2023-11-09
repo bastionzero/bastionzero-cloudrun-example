@@ -1,26 +1,25 @@
-# Guide
+# BastionZero & Google Cloud Run Guide
 
-This guide is a walkthrough of how to use the
+This guide is a walkthrough of how to leverage the
 [`zli`](https://docs.bastionzero.com/docs/deployment/installing-the-zli) and
 [BastionZero service
 accounts](https://docs.bastionzero.com/docs/admin-guide/authentication/service-accounts-management)
 to SSH into a Linux host from [Google Cloud
-Run](https://cloud.google.com/run?hl=en). We use the example Node.js server,
+Run](https://cloud.google.com/run?hl=en) (GCR). We use the example Node.js server,
 [`Dockerfile`](./Dockerfile), and [`Terraform`](./main.tf) provided in this repo
-to demonstrate this usecase. Please feel free to mix and match elements of these
-components with your own custom integration to better fit your specific usecase.
+to demonstrate this use case. Please feel free to mix and match elements of these
+components with your own custom integration to better fit your specific requirements.
 
-**Note:** Terraform is not required to implement this Cloud Run usecase; it is
-simply included in this example repo to make the guide easier to follow. 
+**Note:** Terraform is not required to implement this Cloud Run use case; it is included in this example repo to make the guide easier to follow. 
 
-## Before you begin
+## Before You Begin
 
 - You must be an administrator of your BastionZero organization in order to
   create a [BastionZero service account](https://docs.bastionzero.com/docs/admin-guide/authentication/service-accounts-management).
 - Ensure the
   [`zli`](https://docs.bastionzero.com/docs/deployment/installing-the-zli) is
   installed on your machine as it is used to perform some of the one-time manual
-  steps when creating the BastionZero service account.
+  steps when creating a BastionZero service account.
 - Ensure [`gcloud`](https://cloud.google.com/sdk/gcloud) is installed on your
   machine as it is used to submit a build of the example server to GCR. Don't
   forget to authorize the `gcloud` CLI (instructions found
@@ -30,7 +29,7 @@ simply included in this example repo to make the guide easier to follow.
   required to deploy the Cloud Run service.
 - Ensure [`docker`](https://docs.docker.com/desktop/) is installed on your
   machine and is currently running.
-- Setup Application Default Credentials (ADC) in order to configure the
+- Set up Application Default Credentials (ADC) in order to configure the
   [`google` Terraform
   provider](https://registry.terraform.io/providers/hashicorp/google/latest/docs)
   used in [`main.tf`](./main.tf): [`gcloud auth application-default
@@ -45,25 +44,25 @@ used in [`main.tf`](./main.tf). Manage your API keys at the API key panel found
   root of the repo; the shell commands in this guide assume you have changed
   your `cwd` accordingly.
 
-## Create a BastionZero service account (SA) via GCP
+## Create a BastionZero Service Account (SA) via Google Cloud Platform (GCP)
 
 First, we'll create a BastionZero service account in your BastionZero
-organization. We'll also download its associated public/private keypair and save
+organization. We'll also download its associated public/private key pair and save
 it, along with some other credentials, in Google Secret Manager for later use in
 the Node.js server.
 
-### Create the GCP service account
+### Create the GCP Service Account
 
-The Google Cloud Platform (GCP) provides a convenient way of creating the
-public/private key pair and the JWKS URL, both of which are needed for setting
+Google Cloud Platform provides a convenient way of creating the
+public/private key pair and the JSON Web Key Set(JWKS) URL, both of which are needed for setting
 up your BastionZero service account.
 
-Please follow steps 1-4 in this guide which detail how to create the SA on GCP:
-https://docs.bastionzero.com/docs/admin-guide/authentication/service-accounts-management#google-cloud-service-account
+Please follow steps 1-4 in [this](https://docs.bastionzero.com/docs/admin-guide/authentication/service-accounts-management#google-cloud-service-account
+) guide, which details how to create the SA on GCP.
 
 At the end of the linked guide, you should have downloaded a `.json` file
 (provider file) that contains your service account's credentials from GCP. Let's
-rename this file to `provider-file.json` and place it in your current working
+rename this file to `provider-file.json`, and place it in your current working
 directory for convenience.
 
 **Important:** Please keep note of the service account's email address as we'll
@@ -71,9 +70,9 @@ need it later. The email address should be displayed in the service account
 creation screen after filling in the details. It can also be found in the table
 of service accounts under "IAM" -> "Service Accounts" after creation. It should
 look something like this:
-`<service-account-id>@<gcp-project-id>.iam.gserviceaccount.com`
+`<service-account-id>@<gcp-project-id>.iam.gserviceaccount.com`.
 
-### Create the BastionZero service account
+### Create the BastionZero Service Account
 
 Next, let's use these credentials to create the BastionZero service account in
 your BastionZero organization:
@@ -86,16 +85,15 @@ zli service-account create provider-file.json
 The result of the `zli service-account create` command will be a
 `bzero-credentials.json` file created in your current working directory.
 
-### Store credentials in Google Secret Manager
+### Store Credentials in Google Secret Manager
 
 To finish up this section, we'll upload both the `provider-file.json` file and
 `bzero-credentials.json` file as secrets in Google Secret Manager. Open up the
-Secret Manager on the GCP Console:
-https://console.cloud.google.com/security/secret-manager
+Secret Manager on the [GCP Console](https://console.cloud.google.com/security/secret-manager).
 
 #### Secret #1: `cloudrun-example-sa-provider-cred`
 
-1) Click "Create Secret".
+1) Click "Create Secret."
 2) In the name field, enter: `cloudrun-example-sa-provider-cred`. You can use a
    different name, but you'll have to input your chosen secret name when we
    apply the Terraform.
@@ -110,7 +108,7 @@ Let's create one more secret. Follow the same instructions in the section above,
 except this secret's name should be `cloudrun-example-sa-bzero-cred` and in step
 #3, you should upload the `bzero-credentials.json` file instead.
 
-## Upload example container image to GCR
+## Upload Example Container Image to GCR
 
 Next, we'll use the `gcloud` CLI to submit a build of the example Node.js server
 to GCR; our example Cloud Run service will run using this image.
@@ -123,7 +121,7 @@ and the application code (`*.ts` files).
 The [`Dockerfile`](./Dockerfile) defines how to build the container image and
 entrypoint for the Cloud Run service application.
 
-#### Install `zli` as a dependency
+#### Install `zli` as a Dependency
 
 The following section is the code that installs the `zli` as a system package
 dependency in the container. This step is required so the Node.js server can use
@@ -131,10 +129,10 @@ the `zli` to SSH into a BastionZero-secured Linux host:
 
 https://github.com/bastionzero/bastionzero-cloudrun-example/blob/fa3100807fdc86f3815c09dca0d9d4e87a5f934e/Dockerfile#L6-L12
 
-#### Install `ssh` as a dependency
+#### Install `ssh` as a Dependency
 
 This section installs the `openssh-client` so that the Node.js server can
-execute `ssh`. It also creates an empty `~/.ssh/config` file which the `zli`
+execute `ssh`. It also creates an empty `~/.ssh/config` file, which the `zli`
 updates to store config information related to connecting to your target over
 SSH:
 
@@ -145,7 +143,7 @@ https://github.com/bastionzero/bastionzero-cloudrun-example/blob/fa3100807fdc86f
 Most of the core logic of the Node.js server can be found in
 [`app.ts`](./app.ts). Let's go over some parts of the code.
 
-#### Fetch secrets from Google Secret Manager
+#### Fetch Secrets From Google Secret Manager
 
 We use the
 [`@google-cloud/secret-manager`](https://www.npmjs.com/package/@google-cloud/secret-manager)
@@ -154,7 +152,7 @@ memory:
 
 https://github.com/bastionzero/bastionzero-cloudrun-example/blob/fa3100807fdc86f3815c09dca0d9d4e87a5f934e/app.ts#L28-L46
 
-#### Use service account credentials to login via the `zli` programmatically
+#### Use Service Account Credentials to Log In via the `zli` Programmatically
 
 We use `zli service-account login` to perform a headless authentication to the
 BastionZero platform:
@@ -193,14 +191,14 @@ gcloud builds submit --tag gcr.io/<project-id>/bastionzero-cloudrun-example
 
 Please replace `<project-id>` with the GCP project ID of your choice.
 
-## Apply Terraform to deploy remaining infrastructure
+## Apply Terraform to Deploy Remaining Infrastructure
 
 With all the previous steps completed, we're now ready to perform the remaining
 infrastructure tasks to get the example Cloud Run service running. This step is
 easy as we'll just use the example [`main.tf`](./main.tf) Terraform file to
 apply these infrastructure changes.
 
-### Install the Terraform providers
+### Install the Terraform Providers
 
 We use the following providers in [`main.tf`](./main.tf):
 - The [`google` Terraform
@@ -226,10 +224,10 @@ Run the following command to install the providers used by `main.tf`:
 terraform init
 ```
 
-### Configure the Terraform providers
+### Configure the Terraform Providers
 
 The `google` Terraform provider should automatically be configured if you have
-setup your ADC as described in the [first section](#before-you-begin).
+set up your ADC as described in the [first section](#before-you-begin).
 
 The `docker` Terraform provider has no additional configuration. However, please
 ensure `docker` is running before proceeding.
@@ -266,15 +264,15 @@ Here is a quick summary:
   [uploaded to GCR](#upload-to-gcr).
 - A [BastionZero target connect
   policy](https://github.com/bastionzero/bastionzero-cloudrun-example/blob/ea74090fa6d56422d7b2358d01855296f2516780/main.tf#L141-L167)
-  is created which gives [the BastionZero service
+  is created, which gives [the BastionZero service
   account](#create-the-bastionzero-service-account) SSH access (as the `root`
   user) to targets in the `Default` and `AWS` environments in your BastionZero
-  organization. Please modify accordingly to better fit your infrastructure
+  organization. *Please modify accordingly to better fit your infrastructure
   requirements (e.g. use different
   [`target_user`](https://github.com/bastionzero/bastionzero-cloudrun-example/blob/ea74090fa6d56422d7b2358d01855296f2516780/main.tf#L164)
   than `root` or other
   [`envs`](https://github.com/bastionzero/bastionzero-cloudrun-example/blob/ea74090fa6d56422d7b2358d01855296f2516780/main.tf#L149)
-  than `Default` and `AWS`).
+  than `Default` and `AWS`).*
 
 Run the following command to apply the remaining infrastructure via Terraform:
 
@@ -297,10 +295,10 @@ defaults](https://developer.hashicorp.com/terraform/language/values/variables#va
 and pass different values for `var.provider_creds_file_secret_name` and
 `var.bzero_creds_file_secret_name`.
 
-Review the returned Terraform plan and type in "yes" and press enter to apply
+Review the returned Terraform plan. Type in "yes" and press enter to apply
 the plan.
 
-## Demo via proxy
+## Demo via Proxy
 
 Let's demo the example by proxying the Cloud Run service to `localhost` and
 authenticating as the active account (i.e. the account you are logged in as via
@@ -323,16 +321,16 @@ installed on the container.
 - [`/ssh?host=example-target`](http://127.0.0.1:8080/ssh?host=example-target):
   Executes the [default
   command](https://github.com/bastionzero/bastionzero-cloudrun-example/blob/cff6437444c355c55de7dc7263a123f5a7d5f4bc/app.ts#L121)
-  against the target `example-target`. In this example, `ssh` logins as `root`
+  against the target `example-target`. In this example, `ssh` logs in as `root`
   to execute the command.
 - [`/ssh?host=example-target&cmd=whoami`](http://127.0.0.1:8080/ssh?host=example-target&cmd=whoami):
   Executes the `whoami` command against the target `example-target`. In this
-  example, `ssh` logins as `root` to execute the command.
+  example, `ssh` logs in as `root` to execute the command.
 - [`/ssh?host=example-target&cmd=whoami&user=foo`](http://127.0.0.1:8080/ssh?host=example-target&cmd=whoami&user=foo):
   Executes the `whoami` command against the target `example-target`. In this
-  example, `ssh` logins as `foo` to execute the command. You may receive an
+  example, `ssh` logs in as `foo` to execute the command. You may receive an
   error if the service account does not have BastionZero policy access to SSH as
-  the `foo` user, or if the user `foo` does not exist on the Linux host.
+  the `foo` user or if the user `foo` does not exist on the Linux host.
 
 ## Cleanup
 
@@ -341,12 +339,9 @@ Below are some optional cleanup steps:
 - Run `terraform destroy` to destroy the example Cloud Run service and other
 infrastructure created by Terraform.
 - Delete the example image `bastionzero-cloudrun-example` from your project's
-  GCR: https://console.cloud.google.com/gcr/images/.
+  [GCR](https://console.cloud.google.com/gcr/images/).
 - Delete the secrets `cloudrun-example-sa-provider-cred` and
-  `cloudrun-example-sa-bzero-cred` from Google Secret Manager:
-  https://console.cloud.google.com/security/secret-manager.
-- Disable the [service account](#create-the-bastionzero-service-account) in your BastionZero organization: https://cloud.bastionzero.com/admin/subjects
-- Delete the [service account](#create-the-gcp-service-account) from GCP:
-  https://console.cloud.google.com/iam-admin/serviceaccounts.
-- Delete the [API key](#before-you-begin) in your BastionZero organization:
-  https://cloud.bastionzero.com/admin/apikeys.
+  `cloudrun-example-sa-bzero-cred` from [Google Secret Manager](https://console.cloud.google.com/security/secret-manager).
+- Disable the [service account](#create-the-bastionzero-service-account) in your [BastionZero organization](https://cloud.bastionzero.com/admin/subjects).
+- Delete the [service account](#create-the-gcp-service-account) from [GCP](https://console.cloud.google.com/iam-admin/serviceaccounts).
+- Delete the [API key](#before-you-begin) in your [BastionZero organization](https://cloud.bastionzero.com/admin/apikeys).
